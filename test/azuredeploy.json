@@ -1,0 +1,197 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "prefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Prefix to be applied to resources"
+      },
+      "defaultValue": ""
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location for the storage account. By default will use the resource group location"
+      },
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "uniqueShort": {
+      "type": "string",
+      "metadata": {
+          "description": "A string of 4 or 5 characters that will be used to help uniquely identify the resources that are created. If this is not specified then a value will be automatically created."
+      },
+      "defaultValue": ""
+    },
+    "repoUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "URL for the repo which has the code to deploy"
+      },
+      "defaultValue": "https://github.com/chef-partners/camsa-functions"
+    },
+    "repoBranch": {
+      "type": "string",
+      "metadata": {
+        "descrtiption": "Branch that the code should be deployed from"
+      }
+    }
+  },
+  "variables": {
+    "location": "[parameters('location')]",
+    "unique": "[uniqueString(subscription().subscriptionId, resourceGroup().id, deployment().name, parameters('prefix'))]",
+    "uniqueShort": "[if(empty(parameters('uniqueShort')), substring(variables('unique'), 0, 4), parameters('uniqueShort'))]",
+
+    "prefix": "[if(empty(parameters('prefix')), '', concat(parameters('prefix'), '-'))]",
+
+    "name": {
+      "storageAccount": "[variables('unique')]",
+      "applicationInsights": "[concat(variables('prefix'), variables('uniqueShort'), '-AppInsights')]",
+      "appServicePlan": "[concat(variables('prefix'), variables('uniqueShort'), '-ApPServicePlan')]",
+      "site": "[concat(variables('prefix'), variables('uniqueShort'))]"
+    },
+
+    "sa": {
+      "type": "Standard_LRS"
+    },
+
+    "appServicePlan": {
+      "tier": "Standard",
+      "name": "S1",
+      "size": "S1",
+      "family": "S",
+      "capacity": 1
+    },
+
+    "repo": {
+      "url": "[parameters('repoUrl')]",
+      "branch": "[parameters('repoBranch')]"
+    },
+    
+    "apiVersions": {
+      "storageAccount": "2018-07-01",
+      "applicationInsights": "2015-05-01",
+      "serverFarms": "2016-09-01",
+      "sites": "2016-08-01",
+      "sourcecontrols": "2018-02-01"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('name').storageAccount]",
+      "location": "[variables('location')]",
+      "apiVersion": "[variables('apiVersions').storageAccount]",
+      "sku": {
+        "name": "[variables('sa').type]"
+      },
+      "kind": "StorageV2"
+    },
+
+    {
+      "type": "Microsoft.Insights/components",
+      "name": "[variables('name').applicationInsights]",
+      "apiVersion": "[variables('apiVersions').applicationInsights]",
+      "kind": "web",
+      "location": "[variables('location')]",
+      "properties": {
+        "Application_Type": "web"
+      }
+    },
+
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "name": "[variables('name').appServicePlan]",
+      "apiVersion": "[variables('apiVersions').serverFarms]",
+      "location": "[variables('location')]",
+      "properties": {
+        "name": "[variables('name').appServicePlan]"
+      },
+      "sku": "[variables('appServicePlan')]"
+    },
+
+    {
+      "type": "Microsoft.Web/sites",
+      "name": "[variables('name').site]",
+      "apiVersion": "[variables('apiVersions').sites]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', variables('name').storageAccount)]",
+        "[concat('Microsoft.Insights/components', variables('name').applicationInsights)]",
+        "[concat('Microsoft.Web/serverfarms/', variables('name').appServicePlan)]"
+      ],
+      "kind": "functionapp",
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('name').appServicePlan)]",
+        "clientAffinityEnabled": false,
+        "siteConfig": {
+          "alwaysOn": true,
+          "phpVersion": "",
+          "appSettings": [
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('name').storageAccount, ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('name').storageAccount), variables('apiVersions').storageAccount).keys[0].value, ';EndpointSuffix=core.windows.net')]"
+            },
+            {
+              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('name').storageAccount, ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('name').storageAccount), variables('apiVersions').storageAccount).keys[0].value, ';EndpointSuffix=core.windows.net')]"
+            },
+            {
+              "name": "WEBSITE_CONTENTSHARE",
+              "value": "[toLower(variables('name').site)]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "2.0"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('name').applicationInsights)).InstrumentationKey]"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "dotnet"
+            }                                
+          ]
+        }
+      },
+      "resources": [
+        {
+          "type": "sourcecontrols",
+          "name": "web",
+          "apiVersion": "[variables('apiVersions').sourcecontrols]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/sites', variables('name').site)]"
+          ],
+          "properties": {
+            "repoUrl": "[variables('repo').url]",
+            "branch": "[variables('repo').branch]",
+            "isManualIntegration": false
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "storageAccountName": {
+      "type": "string",
+      "value": "[variables('name').storageAccount]"
+    },
+    "accessKey": {
+      "type": "string",
+      "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('name').storageAccount), variables('apiVersions').storageAccount).keys[0].value]"
+    },
+    "connectionString": {
+      "type": "string",
+      "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('name').storageAccount, ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('name').storageAccount), variables('apiVersions').storageAccount).keys[0].value, ';EndpointSuffix=core.windows.net')]"
+    },
+    "apiOpsUrl": {
+      "type": "string",
+      "value": "[concat('https://', variables('name').site, '.azurewebsites.net/api/config')]"
+    },
+    "apiOpsKey": {
+      "type": "string",
+      "value": "[listsecrets(resourceId('Microsoft.Web/sites/functions', variables('name').site, 'ops'), '2016-08-01').key]"
+    }
+  }
+}
