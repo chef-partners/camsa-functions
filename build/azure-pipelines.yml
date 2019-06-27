@@ -1,19 +1,57 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+# Set the name of the build, which is the build number
+name: 0.1$(Rev:.r)
 
 trigger:
 - master
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: AMA Agent
+
+variables:
+  RESOURCE_GROUP_NAME: azdo-camsa-functions-$(Build.BuildNumber)
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- task: AzureResourceGroupDeployment@2
+  inputs:
+    azureSubscription: 'Partner Engineering(1e0b427a-d58b-494e-ae4f-ee558463ebbf)'
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(RESOURCE_GROUP_NAME)
+    location: 'West Europe'
+    templateLocation: 'Linked artifact'
+    csmFile: '$(Build.SourcesDirectory)/test/azuredeploy.json'
+    deploymentMode: 'Incremental'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- task: ARM Outputs@5
+  inputs:
+    ConnectedServiceNameSelector: 'ConnectedServiceNameARM'
+    ConnectedServiceNameARM: 'Partner Engineering(1e0b427a-d58b-494e-ae4f-ee558463ebbf)'
+    resourceGroupName: $(RESOURCE_GROUP_NAME)
+    whenLastDeploymentIsFailed: 'fail'
+
+- task: YamlPatch@3
+  inputs:
+    SyntaxType: 'slick'
+    YamlWorkingDir: '$(Build.SourcesDirectory)/test/integration'
+    YamlTargetFilters: 'inspec-attrs.yaml'
+    YamlPatchContent: '= /function_url => $(APIBASEURL)
+      = /api_key => $(FUNCTIONHOSTKEY)'
+    OutputPatchFile: true
+    TreatErrors: 'ERROR'
+
+- task: vsts-chef-task-exec-inspec@1
+  inputs:
+    inspecProfilePath: '$(Build.SourcesDirectory)/test/integration/verify'
+    inspecArguments: '--attrs $(Build.SourcesDirectory)/test/integration/inspec-attrs.yaml'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'NUnit'
+    testResultsFiles: '**/inspec.out'
+    searchFolder: '$(Build.SourcesDirectory)'
+    testRunTitle: 'CAMSA Functions Tests'
+
+- task: AzureResourceGroupDeployment@2
+  inputs:
+    azureSubscription: 'Partner Engineering(1e0b427a-d58b-494e-ae4f-ee558463ebbf)'
+    action: 'DeleteRG'
+    resourceGroupName: $(RESOURCE_GROUP_NAME)
