@@ -1,9 +1,6 @@
 # Set the name of the build, which is the build number
 name: 0.1$(Rev:.r)
 
-trigger:
-- master
-
 pool:
   name: AMA Agent
 
@@ -19,6 +16,7 @@ steps:
     location: 'West Europe'
     templateLocation: 'Linked artifact'
     csmFile: '$(Build.SourcesDirectory)/test/azuredeploy.json'
+    overrideParameters: 'repoBranch=$(Build.SourceBranchName)'
     deploymentMode: 'Incremental'
 
 - task: ARM Outputs@5
