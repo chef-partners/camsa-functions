@@ -16,7 +16,7 @@ steps:
     location: 'West Europe'
     templateLocation: 'Linked artifact'
     csmFile: '$(Build.SourcesDirectory)/test/azuredeploy.json'
-    overrideParameters: 'repoBranch=$(Build.SourceBranchName)'
+    overrideParameters: '-repoBranch $(Build.SourceBranchName)'
     deploymentMode: 'Incremental'
 
 - task: ARM Outputs@5
