@@ -13,7 +13,7 @@ variables:
 steps:
 - task: AzureResourceGroupDeployment@2
   inputs:
-    azureSubscription: 'Partner Engineering(1e0b427a-d58b-494e-ae4f-ee558463ebbf)'
+    azureSubscription: 'Partner Engineering'
     action: 'Create Or Update Resource Group'
     resourceGroupName: $(RESOURCE_GROUP_NAME)
     location: 'West Europe'
@@ -24,7 +24,7 @@ steps:
 - task: ARM Outputs@5
   inputs:
     ConnectedServiceNameSelector: 'ConnectedServiceNameARM'
-    ConnectedServiceNameARM: 'Partner Engineering(1e0b427a-d58b-494e-ae4f-ee558463ebbf)'
+    ConnectedServiceNameARM: 'Partner Engineering'
     resourceGroupName: $(RESOURCE_GROUP_NAME)
     whenLastDeploymentIsFailed: 'fail'
 
@@ -52,6 +52,6 @@ steps:
 
 - task: AzureResourceGroupDeployment@2
   inputs:
-    azureSubscription: 'Partner Engineering(1e0b427a-d58b-494e-ae4f-ee558463ebbf)'
+    azureSubscription: 'Partner Engineering'
     action: 'DeleteRG'
     resourceGroupName: $(RESOURCE_GROUP_NAME)
