@@ -69,10 +69,10 @@
     },
     
     "apiVersions": {
-      "storageAccount": "2018-07-01",
+      "storageAccount": "2019-04-01",
       "applicationInsights": "2015-05-01",
-      "serverFarms": "2016-09-01",
-      "sites": "2016-08-01",
+      "serverFarms": "2018-02-01",
+      "sites": "2018-11-01",
       "sourcecontrols": "2018-02-01"
     }
   },
@@ -117,7 +117,7 @@
       "location": "[variables('location')]",
       "dependsOn": [
         "[concat('Microsoft.Storage/storageAccounts/', variables('name').storageAccount)]",
-        "[concat('Microsoft.Insights/components', variables('name').applicationInsights)]",
+        "[concat('Microsoft.Insights/components/', variables('name').applicationInsights)]",
         "[concat('Microsoft.Web/serverfarms/', variables('name').appServicePlan)]"
       ],
       "kind": "functionapp",
@@ -142,7 +142,7 @@
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
-              "value": "2.0"
+              "value": "~2"
             },
             {
               "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
@@ -185,13 +185,13 @@
       "type": "string",
       "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('name').storageAccount, ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('name').storageAccount), variables('apiVersions').storageAccount).keys[0].value, ';EndpointSuffix=core.windows.net')]"
     },
-    "apiOpsUrl": {
+    "apiBaseUrl": {
       "type": "string",
-      "value": "[concat('https://', variables('name').site, '.azurewebsites.net/api/config')]"
+      "value": "[concat('https://', variables('name').site, '.azurewebsites.net/api')]"
     },
-    "apiOpsKey": {
+    "functionHostKey": {
       "type": "string",
-      "value": "[listsecrets(resourceId('Microsoft.Web/sites/functions', variables('name').site, 'ops'), '2016-08-01').key]"
+      "value": "[listkeys(concat(resourceId('Microsoft.Web/sites', variables('name').site), '/host/default'), variables('apiVersions').sites).functionKeys.default]"
     }
   }
 }

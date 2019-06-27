@@ -1,13 +1,22 @@
 # Define attributes which will be used in the tests to determine
 # where the tests should be run
-base_url = attribute('function_url', default: 'http://192.168.50.191:7071/api')
+base_url = attribute('function_url', default: 'http://localhost:7071/api')
+api_key = attribute('api_key', default: '')
+
+# Declare headers hash
+headers = {}
+
+# If the api_key has been set add the x-functions-key
+unless api_key.empty?
+  headers["x-functions-key"] = api_key
+end
 
 # TEST 1: Ensoure that unknown API endpoints respond with the correct response 
 control 'GET unknown endpoint from the API' do
   impact 1.0
   title 'Call unkown API endpoint'
 
-  response = http("#{base_url}/foobar", method: 'GET')
+  response = http("#{base_url}/foobar", method: 'GET', headers: headers)
   describe response do
     it 'should return HTTP 404' do
       expect(subject.status).to eq(404)
@@ -24,7 +33,7 @@ control 'GET config endpoint' do
   impact 1.0
   title 'Call /config'
 
-  response = http("#{base_url}/config", method: 'GET')
+  response = http("#{base_url}/config", method: 'GET', headers: headers)
   describe response do
     it 'should return HTTP 200' do
       expect(subject.status).to eq(200)
@@ -37,7 +46,7 @@ control 'GET item from config endpoint' do
   impact 1.0
   title 'Retrieve /config/inspec_test'
 
-  response = http("#{base_url}/config/inspec_test", method: 'GET')
+  response = http("#{base_url}/config/inspec_test", method: 'GET', headers: headers)
   describe response do
     it 'should return HTTP 404' do
       expect(subject.status).to eq(404)
@@ -54,7 +63,7 @@ control 'POST item to config API' do
   impact 1.0
   title 'Add new item'
 
-  response = http("#{base_url}/config", method: 'POST', data: '{"inspec_test": "it rocks"}')
+  response = http("#{base_url}/config", method: 'POST', data: '{"inspec_test": "it rocks"}', headers: headers)
 
   describe response do
     it 'should return HTTP 204' do
@@ -69,7 +78,7 @@ control 'Retrieve newly inserted data' do
   impact 1.0
   title 'GET inspec_test'
 
-  response = http("#{base_url}/config/inspec_test", method: 'GET')
+  response = http("#{base_url}/config/inspec_test", method: 'GET', headers: headers)
 
   describe response do
     it 'should return HTTP 200' do
@@ -86,7 +95,7 @@ control 'Retrieve data in category' do
   impact 1.0
   title 'Unknwon category of "inspec"'
 
-  response = http("#{base_url}/config/inspec_test/inspec", method: 'GET')
+  response = http("#{base_url}/config/inspec_test/inspec", method: 'GET', headers: headers)
 
   describe response do
     it 'should return HTTP 404' do
@@ -104,7 +113,7 @@ control 'Remove item in api' do
   impact 1.0
   title 'Remove inspec_test'
 
-  response = http("#{base_url}/config/inspec_test", method: 'DELETE')
+  response = http("#{base_url}/config/inspec_test", method: 'DELETE', headers: headers)
 
   describe response do
     it 'should return HTTP 200' do
@@ -118,7 +127,7 @@ control 'Retrieve deleted data' do
   impact 1.0
   title 'GET inspec_test'
 
-  response = http("#{base_url}/config/inspec_test", method: 'GET')
+  response = http("#{base_url}/config/inspec_test", method: 'GET', headers: headers)
 
   describe response do
     it 'should return HTTP 404' do
