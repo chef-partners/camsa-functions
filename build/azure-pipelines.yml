@@ -45,7 +45,7 @@ steps:
 
 - task: PublishTestResults@2
   inputs:
-    testResultsFormat: 'NUnit'
+    testResultsFormat: 'JUnit'
     testResultsFiles: '**/inspec.out'
     searchFolder: '$(Build.SourcesDirectory)'
     testRunTitle: 'CAMSA Functions Tests'
