@@ -186,6 +186,7 @@
             "repoUrl": "[variables('repo').url]",
             "branch": "[variables('repo').branch]",
             "isManualIntegration": false,
+            "sourceType": "GitHub",
             "security": {
               "accessToken": "[variables('repo').token]",
               "tokenType": "[variables('repo').tokenType]"
