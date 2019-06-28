@@ -17,7 +17,7 @@ steps:
     location: 'West Europe'
     templateLocation: 'Linked artifact'
     csmFile: '$(Build.SourcesDirectory)/test/azuredeploy.json'
-    overrideParameters: '-repoBranch $(Build.SourceBranchName)'
+    overrideParameters: '-repoBranch $(Build.SourceBranchName) -githubToken $(GITHUB_TOKEN)'
     deploymentMode: 'Incremental'
 
 - task: ARM Outputs@5
@@ -32,8 +32,9 @@ steps:
     SyntaxType: 'slick'
     YamlWorkingDir: '$(Build.SourcesDirectory)/test/integration'
     YamlTargetFilters: 'inspec-attrs.yaml'
-    YamlPatchContent: '= /function_url => $(APIBASEURL)
-      = /api_key => $(FUNCTIONHOSTKEY)'
+    YamlPatchContent: |
+      = /function_url => "$(APIBASEURL)"
+      = /api_key => "$(FUNCTIONHOSTKEY)"
     OutputPatchFile: true
     TreatErrors: 'ERROR'
 

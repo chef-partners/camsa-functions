@@ -35,6 +35,23 @@
       "metadata": {
         "descrtiption": "Branch that the code should be deployed from"
       }
+    },
+    "githubToken": {
+      "type": "string",
+      "metadata": {
+        "description": "GitHub PAT allowing acess to the repo fro Source Control deployment"
+      }
+    },
+    "githubTokenType": {
+      "type": "string",
+      "metadata": {
+        "description": "Type of token that has been supplied. Oauth or PersonalAccessToken"
+      },
+      "defaultValue": "PersonalAccessToken",
+      "allowedValues": [
+        "Oauth",
+        "PersonalAccessToken"
+      ]
     }
   },
   "variables": {
@@ -65,7 +82,9 @@
 
     "repo": {
       "url": "[parameters('repoUrl')]",
-      "branch": "[parameters('repoBranch')]"
+      "branch": "[parameters('repoBranch')]",
+      "token": "[parameters('githubToken')]",
+      "tokenType": "[parameters('githubTokenType')]"
     },
     
     "apiVersions": {
@@ -166,7 +185,11 @@
           "properties": {
             "repoUrl": "[variables('repo').url]",
             "branch": "[variables('repo').branch]",
-            "isManualIntegration": false
+            "isManualIntegration": false,
+            "security": {
+              "accessToken": "[variables('repo').token]",
+              "tokenType": "[variables('repo').tokenType]"
+            }
           }
         }
       ]
