@@ -6,11 +6,12 @@ pool:
 
 variables:
   RESOURCE_GROUP_NAME: azdo-camsa-functions-$(Build.BuildNumber)
+  SERVICE_CONNECTION: CAMSA AzDo Azure SPN
 
 steps:
 - task: AzureResourceGroupDeployment@2
   inputs:
-    azureSubscription: 'Partner Engineering'
+    azureSubscription: $(SERVICE_CONNECTION)
     action: 'Create Or Update Resource Group'
     resourceGroupName: $(RESOURCE_GROUP_NAME)
     location: 'West Europe'
@@ -22,7 +23,7 @@ steps:
 - task: ARM Outputs@5
   inputs:
     ConnectedServiceNameSelector: 'ConnectedServiceNameARM'
-    ConnectedServiceNameARM: 'Partner Engineering'
+    ConnectedServiceNameARM: $(SERVICE_CONNECTION)
     resourceGroupName: $(RESOURCE_GROUP_NAME)
     whenLastDeploymentIsFailed: 'fail'
 
@@ -50,6 +51,6 @@ steps:
 
 - task: AzureResourceGroupDeployment@2
   inputs:
-    azureSubscription: 'Partner Engineering'
+    azureSubscription: $(SERVICE_CONNECTION)
     action: 'DeleteRG'
     resourceGroupName: $(RESOURCE_GROUP_NAME)
