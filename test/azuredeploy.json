@@ -41,7 +41,7 @@
       "metadata": {
         "description": "GitHub PAT allowing acess to the repo fro Source Control deployment"
       },
-      "defaultValue": null
+      "defaultValue": ""
     },
     "githubTokenType": {
       "type": "string",
