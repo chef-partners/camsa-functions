@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -8,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.Azure.WebJobs.Extensions.Storage;
+using System.Net.Http.Headers;
 
 namespace CAMSA.Functions
 {
@@ -32,13 +35,19 @@ namespace CAMSA.Functions
       string optype,
       string id,
       string category,
-      [Table("settingTable")] CloudTable settingTable,
-      ILogger log) {
+      [Table("settings")] CloudTable settingTable,
+      ILogger log,
+      ExecutionContext executionContext) {
 
         // Initialise variables
         HttpResponseMessage response = null;
         ResponseMessage msg = new ResponseMessage();
         IEntity entity = null;
+
+        // if the category is null check to see if it has been set in the headers
+        if (String.IsNullOrEmpty(category)) {
+          category = GetHeaderValue(req.Headers, "X-Category");
+        }
         
         // Perform the appropriate processes based on the optype
         switch (optype)
@@ -48,6 +57,12 @@ namespace CAMSA.Functions
             // create a new config entity
             entity = new Config(Constants.ConfigStorePartitionKey);
             response = await entity.Process(req, settingTable, log, id, category);
+            break;
+
+          case "starterKit": 
+
+            StarterKit sk = new StarterKit();
+            response = await sk.Process(req, settingTable, log, category, executionContext);
             break;
 
           // Set a default response if the optype is not recognised
@@ -62,5 +77,17 @@ namespace CAMSA.Functions
 
         return response;
       }
+  
+    private static string GetHeaderValue(HttpRequestHeaders headers, string key)
+    {
+      IEnumerable<string> values;
+
+      if (headers.TryGetValues(key, out values))
+      {
+        return values.FirstOrDefault();
+      }
+
+      return null;
+    }
   }
 }

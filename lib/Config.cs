@@ -4,9 +4,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 
@@ -152,11 +154,16 @@ namespace CAMSA.Functions
           // attempt to get the data based on whether the identifier is set or not
           if (String.IsNullOrEmpty(identifier))
           {
+
+            log.LogInformation("All configs have been requested from the '{0}' category", category);
+
             // no identifier has been supplied so retrieve all records
             result = await ds.GetAll(category);
           }
           else
           {
+            log.LogInformation("Configuration item has been requested from the '{0}' category: {1}", category, identifier);
+
             result = await ds.Get(identifier, category);
           }
 
@@ -254,5 +261,7 @@ namespace CAMSA.Functions
     {
       return _response;
     }
+
+
   }
 }

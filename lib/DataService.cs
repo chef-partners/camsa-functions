@@ -20,10 +20,13 @@ namespace CAMSA.Functions
     private CloudTable _table;
     private IEntity _entity;
 
-    public DataService(CloudTable table, IEntity entity)
+    public DataService(CloudTable table, IEntity entity = null)
     {
       _table = table;
-      _entity = entity;
+
+      if (entity != null) {
+        _entity = entity;
+      }
     }
 
 
@@ -90,6 +93,9 @@ namespace CAMSA.Functions
       // clear all items from the entity
       // _entity.ClearItems();
 
+      // Create the configs object in which to hold these items
+      Configs configs = new Configs();
+
       // Retrieve all the items from the table
       TableQuery<Config> query = new TableQuery<Config>().Where(
         TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, partitionKey)
@@ -104,12 +110,14 @@ namespace CAMSA.Functions
 
         foreach (Config item in resultSegment.Results)
         {
-          _entity.AddItem(item.RowKey, item.Value);
+          // _entity.AddItem(item.RowKey, item.Value);
+          configs.SetProperty(item.RowKey, item.Value);
         }
       } while (token != null);
 
       // return all the items
-      return _entity.GetItems();
+      // return _entity.GetItems();
+      return configs;
     }
 
     /// <summary>
