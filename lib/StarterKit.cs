@@ -4,6 +4,7 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.IO;
@@ -135,6 +136,9 @@ namespace CAMSA.Functions
         Directory.Delete(chefRepoPath, true);
         File.Delete(zipPath);
         
+      } else {
+        msg.SetError("HTTP Method not supported", true, HttpStatusCode.BadRequest);
+        response = msg.CreateResponse();
       }
       return response;
     }
