@@ -135,7 +135,11 @@ namespace CAMSA.Functions
     /// <param name="identifier">Identifier passed into the API</param>
     /// <param name="category">Category passed into the request</param>
     /// <returns>HttpResponseMessage to return to the client</returns>
-    public async Task<HttpResponseMessage> Process(HttpRequestMessage req, CloudTable table, ILogger log, string identifier, string category)
+    public async Task<HttpResponseMessage> Process(HttpRequestMessage req,
+                                                   CloudTable table,
+                                                   ILogger log,
+                                                   string identifier,
+                                                   string category)
     {
       // Initialise variables
       HttpResponseMessage response = null;
