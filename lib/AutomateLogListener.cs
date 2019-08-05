@@ -1,7 +1,8 @@
-
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace CAMSA.Functions
   public class AutomateLogListener
   {
     private ResponseMessage _response = new ResponseMessage();
-    public async Task<HttpResponseMessage> Process(HttpRequestMessage req, 
+    public async Task<HttpResponseMessage> Process(HttpRequest req, 
                                                    CloudTable table,
                                                    ILogger log,
                                                    string category)
@@ -20,7 +21,7 @@ namespace CAMSA.Functions
       HttpResponseMessage msg;
 
       // Only respond to an HTTP Post
-      if (req.Method == HttpMethod.Post)
+      if (req.Method == "POST")
       {
 
         // Create dataservice to access data in the config table
@@ -32,20 +33,11 @@ namespace CAMSA.Functions
         Configs central_logging = await ds.GetAll("centralLogging");
 
         // Get the body of the request
-        string body = await req.Content.ReadAsStringAsync();
+        string body = await new StreamReader(req.Body).ReadToEndAsync();
         string[] logs = body.Split('}');
 
         // Create an instance of the LogAnalyticsWriter
-        LogAnalyticsWriter log_analytics_writer = new LogAnalyticsWriter(log);
-
-        // Add in the customer workspace information
-        log_analytics_writer.AddWorkspace(config_store.workspace_id, config_store.workspace_key);
-
-        // if the central logging dictionary contains entries for an ID and key add it to the workspace
-        if (central_logging.HasCentralLogging())
-        {
-          log_analytics_writer.AddWorkspace(central_logging.central_workspace_id, central_logging.central_workspace_key);
-        }
+        LogAnalyticsWriter log_analytics_writer = new LogAnalyticsWriter(log, config_store, central_logging);
 
         // Create an instance of AutomateLog which will hold the data that has been submitted
         AutomateLog data = new AutomateLog();

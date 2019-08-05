@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
 using System.Collections.Generic;
@@ -16,6 +17,6 @@ namespace CAMSA.Functions
     void AddItem(string key, string value);
     void ClearItems();
     Dictionary<string, string> GetItems();
-    Task<HttpResponseMessage> Process(HttpRequestMessage req, CloudTable table, ILogger log, string identifier, string category);
+    Task<HttpResponseMessage> Process(HttpRequest req, CloudTable table, ILogger log, string identifier, string category);
   }
 }

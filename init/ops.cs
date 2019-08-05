@@ -26,12 +26,12 @@ namespace CAMSA.Functions
     [FunctionName("ops")]
     public static async Task<HttpResponseMessage> Run(
       [HttpTrigger(
-        AuthorizationLevel.Function,
+        AuthorizationLevel.Anonymous,
         "get",
         "post",
         "delete",
         Route = "{optype}/{id?}/{category?}"
-      )] HttpRequestMessage req,
+      )] HttpRequest req,
       string optype,
       string id,
       string category,
@@ -48,53 +48,89 @@ namespace CAMSA.Functions
       // if the category is null check to see if it has been set in the headers
       if (String.IsNullOrEmpty(category))
       {
-        category = GetHeaderValue(req.Headers, "X-Category");
+        category = req.Headers["X-Category"]; // GetHeaderValue(req.Headers, "X-Category");
       }
 
-      // Perform the appropriate processes based on the optype
-      switch (optype)
-      {
-        case "config":
+      // Check that the correct authentication key has been used to access the function
+      // First check to see if "code" has been set on the query string
+      string suppliedKey = String.Empty;
+      if (!String.IsNullOrEmpty(req.Query["code"])) {
+        suppliedKey = req.Query["code"];
+      } else {
+        suppliedKey = req.Headers["x-functions-key"];
+      }
 
-          // create a new config entity
-          entity = new Config(Constants.ConfigStorePartitionKey);
-          response = await entity.Process(req, settingTable, log, id, category);
-          break;
+      // if the supplied key matches that of the environment setting for the FUNCTION_API_KEY then
+      // run the function
+      string apiKey = Environment.GetEnvironmentVariable(Constants.APIKeyEnvVarName);
+      if (suppliedKey == apiKey || String.IsNullOrEmpty(apiKey)) {
 
-        case "starterKit":
+        // Perform the appropriate processes based on the optype
+        switch (optype)
+        {
+          case "config":
 
-          StarterKit sk = new StarterKit();
-          response = await sk.Process(req, settingTable, log, category, executionContext);
-          break;
+            // create a new config entity
+            entity = new Config(Constants.ConfigStorePartitionKey);
+            response = await entity.Process(req, settingTable, log, id, category);
+            break;
 
-        case "automateLog":
+          case "starterKit":
 
-          AutomateLogListener all = new AutomateLogListener();
-          response = await all.Process(req, settingTable, log, category);
-          break;
+            StarterKit sk = new StarterKit();
+            response = await sk.Process(req, settingTable, log, category, executionContext);
+            break;
 
-        case "counts":
-          await AutomateCounts.Process(settingTable, log);
-          msg = new ResponseMessage();
-          response = msg.CreateResponse();
-          break;
+          case "automateLog":
 
-        // Set a default response if the optype is not recognised
-        default:
+            AutomateLogListener all = new AutomateLogListener();
+            response = await all.Process(req, settingTable, log, category);
+            break;
+
+          case "counts":
+            await AutomateCounts.Process(settingTable, log);
+            msg = new ResponseMessage();
+            response = msg.CreateResponse();
+            break;
+
+          // Set a default response if the optype is not recognised
+          default:
+            msg = new ResponseMessage(
+              String.Format("Specified type is not recognized: {0}", optype),
+              true,
+              HttpStatusCode.NotFound
+            );
+            return msg.CreateResponse();
+        }
+      } else {
+
+        // An incorrect key has been supplied, so send back Not authorised
+        if (String.IsNullOrEmpty(apiKey)) {
           msg = new ResponseMessage(
-            String.Format("Specified type is not recognised: {0}", optype),
+            "Function API key has not been set. Authorization is not possible",
             true,
-            HttpStatusCode.NotFound
+            HttpStatusCode.InternalServerError
           );
-          return msg.CreateResponse();
+        } else {
+          msg = new ResponseMessage(
+            String.Format("Supplied API Key is not valid"),
+            true,
+            HttpStatusCode.Unauthorized
+          );
+        }
+
+        response = msg.CreateResponse();
       }
 
       return response;
     }
 
-    private static string GetHeaderValue(HttpRequestHeaders headers, string key)
+/*
+    private static string GetHeaderValue(IHeaderDictionary headers, string key)
     {
       IEnumerable<string> values;
+
+      headers[]
 
       if (headers.TryGetValues(key, out values))
       {
@@ -103,5 +139,6 @@ namespace CAMSA.Functions
 
       return null;
     }
+ */
   }
 }

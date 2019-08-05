@@ -28,16 +28,7 @@ namespace CAMSA.Functions
       Configs central_logging = await ds.GetAll("central_logging");
 
       // Create an instance of the LogAnalyticsWriter
-      LogAnalyticsWriter log_analytics_writer = new LogAnalyticsWriter(log);
-
-      // Add in the customer workspace information
-      log_analytics_writer.AddWorkspace(config_store.workspace_id, config_store.workspace_key);
-
-      // if the central logging dictionary contains entries for an ID and key add it to the workspace
-      if (central_logging.HasCentralLogging())
-      {
-        log_analytics_writer.AddWorkspace(central_logging.central_workspace_id, central_logging.central_workspace_key);
-      }
+      LogAnalyticsWriter log_analytics_writer = new LogAnalyticsWriter(log, config_store, central_logging);
 
       // Create a datetime variable that is the Linux Epoch time
       System.DateTime dateTime = new System.DateTime(1970, 1, 1, 0, 0, 0, 0);

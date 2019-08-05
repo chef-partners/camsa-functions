@@ -18,15 +18,26 @@ namespace CAMSA.Functions
     Dictionary<string, string> workspaces = new Dictionary<string, string>();
     ILogger AFLog;
 
-    public LogAnalyticsWriter(ILogger log)
+    public LogAnalyticsWriter(ILogger log, Configs config_store, Configs central_logging)
     {
       AFLog = log;
+
+      // Use the config_store to add the necessary workspaces
+      AddWorkspace(config_store.workspace_id, config_store.workspace_key);
+
+      if (config_store.HasCentralLogging()) {
+        AddWorkspace(central_logging.central_workspace_id, central_logging.central_workspace_key);
+      }
     }
 
     public void AddWorkspace(string customerId, string sharedKey)
     {
-      // Add the ID and key to the workspaces dictionary
-      workspaces.Add(customerId, sharedKey);
+      // Add the ID and key to the workspaces dictionary, if they have been provided
+      if (String.IsNullOrEmpty(customerId) && String.IsNullOrEmpty(sharedKey)) {
+        AFLog.LogWarning("Workspace id and key must be specified in order to log to a workspace");
+      } else {
+        workspaces.Add(customerId, sharedKey);
+      }
     }
 
     // Build the API signature
@@ -64,9 +75,9 @@ namespace CAMSA.Functions
         string result = responseContent.ReadAsStringAsync().Result;
         AFLog.LogInformation("Return Result: " + result);
       }
-      catch (Exception excep)
+      catch (Exception ex)
       {
-        AFLog.LogError("API Post Exception: " + excep.Message);
+        AFLog.LogError("API Post Exception: " + ex.Message);
       }
     }
 

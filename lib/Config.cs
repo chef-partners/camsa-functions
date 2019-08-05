@@ -1,9 +1,10 @@
 
-
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Net;
@@ -135,7 +136,7 @@ namespace CAMSA.Functions
     /// <param name="identifier">Identifier passed into the API</param>
     /// <param name="category">Category passed into the request</param>
     /// <returns>HttpResponseMessage to return to the client</returns>
-    public async Task<HttpResponseMessage> Process(HttpRequestMessage req,
+    public async Task<HttpResponseMessage> Process(HttpRequest req,
                                                    CloudTable table,
                                                    ILogger log,
                                                    string identifier,
@@ -149,7 +150,7 @@ namespace CAMSA.Functions
       DataService ds = new DataService(table, this);
 
       // Using the method of the request determine if retrieving or upserting an item
-      switch (req.Method.Method)
+      switch (req.Method)
       {
         case "GET":
 
@@ -191,7 +192,7 @@ namespace CAMSA.Functions
         case "PUT":
 
           // get the json data from the request
-          string json = await req.Content.ReadAsStringAsync();
+          string json = await new StreamReader(req.Body).ReadToEndAsync();
 
           // parse the json
           Parse(json);

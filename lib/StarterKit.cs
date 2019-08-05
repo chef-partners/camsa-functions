@@ -1,4 +1,4 @@
-
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
@@ -28,7 +28,7 @@ namespace CAMSA.Functions
 
     private ILogger _logger;
 
-    public async Task<HttpResponseMessage> Process(HttpRequestMessage req,
+    public async Task<HttpResponseMessage> Process(HttpRequest req,
                                                    CloudTable table,
                                                    ILogger logger,
                                                    string category,
@@ -42,7 +42,7 @@ namespace CAMSA.Functions
       _logger = logger;
 
       // The StarterKit will only response to GET requests
-      if (req.Method == HttpMethod.Get) {
+      if (req.Method == "GET") {
 
         logger.LogInformation("StarterKit has been requested");
         

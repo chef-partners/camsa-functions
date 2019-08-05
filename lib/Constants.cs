@@ -3,6 +3,7 @@ namespace CAMSA.Functions
 {
   class Constants {
     public static string ConfigStorePartitionKey = "CAMSA";
+    public static string APIKeyEnvVarName = "FUNCTIONS_API_KEY";
 
     // Define chef server keys
     public static string ChefServerFQDNKey = "chefserver_fqdn";
