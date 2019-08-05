@@ -19,7 +19,7 @@ namespace CAMSA.Functions
 
       // Get all the settings for the CentralLogging partition
       DataService ds = new DataService(settingTable, config);
-      Configs config_store = await ds.GetAll();
+      Configs config_store = await ds.GetAll(Constants.ConfigStorePartitionKey);
       Configs central_logging = await ds.GetAll("central_logging");
 
       // Create an instance of the LogAnalyticsWriter
@@ -52,20 +52,20 @@ namespace CAMSA.Functions
 
     }
 
-    public static async Task<dynamic> GetData(string type, string fqdn, string token, ILogger log)
+    public static async Task<dynamic> GetData(string type, string token, string fqdn, ILogger log)
     {
       // Initialise variables
       dynamic count = null;
       string url = String.Empty;
 
+      if (type == "node") {
+        count = new NodeCount();
+      } else {
+        count = new UserCount();
+      }
+
       if (String.IsNullOrEmpty(fqdn)) {
         log.LogWarning("Unable to retrieve count from Automate as the FQDN has not been supplied. (Type = {0})", type);
-
-        if (type == "node") {
-          count = new NodeCount();
-        } else {
-          count = new UserCount();
-        }
       } else {
 
         // based on the type, set the url that needs to be accessed

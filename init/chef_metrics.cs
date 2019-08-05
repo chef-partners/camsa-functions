@@ -24,7 +24,7 @@ namespace CAMSA.Functions
       DataService ds = new DataService(settingTable, config);
 
       // Get all the settings for the CentralLogging partition
-      Configs config_store = await ds.GetAll();
+      Configs config_store = await ds.GetAll(Constants.ConfigStorePartitionKey);
       Configs central_logging = await ds.GetAll("central_logging");
 
       // Create an instance of the LogAnalyticsWriter
